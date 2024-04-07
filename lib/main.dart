@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -15,7 +14,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'Loading and Dashboard Screens',
+      debugShowCheckedModeBanner: false,
+      title: 'Fringale Task',
       home: DashboardScreen(),
     );
   }
@@ -40,12 +40,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> fetchData() async {
+    if (isLoading) return;
+
     setState(() {
       isLoading = true;
     });
 
     final response = await http.get(Uri.parse(
-        'http://195.181.240.146:4444/api/v1/public/search/items?page=$currentPage&count=10'));
+        'http://195.181.240.146:4444/api/v1/public/search/items?page=$currentPage&count=5'));
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
 
@@ -71,28 +73,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: height,
-            width: width,
-            child: Column(
-              children: [
-                const CustomAppBar(),
-                SizedBox(
-                  height: height * .95,
-                  width: width,
-                  child: ListView.builder(
-                    itemCount: data.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == data.length) {
-                        return _buildLoadingIndicator();
-                      } else {
-                        return _buildItemCard(data[index]);
-                      }
-                    },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            if (!isLoading &&
+                scrollInfo.metrics.pixels ==
+                    scrollInfo.metrics.maxScrollExtent) {
+              fetchData();
+              return true;
+            }
+            return false;
+          },
+          child: SingleChildScrollView(
+            child: SizedBox(
+              height: height,
+              width: width,
+              child: Column(
+                children: [
+                  const CustomAppBar(),
+                  SizedBox(
+                    height: height * .93,
+                    width: width,
+                    child: ListView.builder(
+                      itemCount: data.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == data.length) {
+                          return _buildLoadingIndicator();
+                        } else {
+                          return _buildItemCard(data[index]);
+                        }
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -314,7 +327,7 @@ class CustomAppBar extends StatelessWidget {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return SizedBox(
-      height: height * 0.05,
+      height: height * 0.07,
       width: width,
       child: Row(
         children: [
